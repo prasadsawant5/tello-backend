@@ -3,6 +3,8 @@ var mongoose = require('mongoose');
 var router = express.Router();
 
 var Bin = require('../models/bin');
+var fs = require('fs');
+var path = require('path');
 
 /* GET home page. */
 router.post('/addItem', function (req, res, next) {
@@ -90,18 +92,34 @@ router.get('/deleteDb', function (req, res, next) {
   // bin9 => bin4 => bin3 => up
   // bin1 => bin6 => Object1 => up1
   // bin7 => bin8 => Object1 => com
-  var bins = [
-    { name: 'bin9', items: null }, { name: 'bin4', items: null }, { name: 'bin3', items: null }, { name: 'up', items: null },
-    { name: 'bin1', items: null }, { name: 'bin6', items: null }, { name: 'Object 1', items: null }, { name: 'up1', items: null },
-    { name: 'bin7', items: null }, { name: 'bin8', items: null }, { name: 'com', items: null }
-  ];
+  var bins = [];
 
-  bins.forEach(function (element) {
-    var bin = new Bin(element);
-    bin.save();
-  })
+  fs.readFile(path.join(__dirname, '/shelf.json'), (err, data) => {  
+    if (err) {
+      console.error(err);
+      return res.status(400).json({ message: 'Error while reading shelf.json file' });
+    }
+    let info = JSON.parse(data);
 
-  res.status(200).json({ 'message': 'DB cleared' });
+    var shelf1 = info['shelf1'];
+    var shelf2 = info['shelf2'];
+
+    shelf1.forEach(function (bin) {
+      bins.push({ name: bin, items: null });
+    });
+
+    shelf2.forEach(function (bin) {
+      bins.push({ name: bin, items: null });
+    });
+
+    bins.forEach(function (element) {
+      var bin = new Bin(element);
+      bin.save();
+    })
+  
+    res.status(200).json({ 'message': 'DB cleared' });
+    
+  });
 });
 
 module.exports = router;
